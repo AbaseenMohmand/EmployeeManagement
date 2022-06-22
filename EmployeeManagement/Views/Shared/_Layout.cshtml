@@ -32,37 +32,50 @@
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="home" asp-action="create">Create</a>
                     </li>
+                    @if (signInManager.IsSignedIn(User) && User.IsInRole("Admin"))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Administration" asp-action="ListUsers">Users</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Administration" asp-action="ListRoles">Roles</a>
+                        </li>
+                    }
                 </ul>
-               
-            </div>
-          
-             <ul class="navbar-nav ml-auto">
 
-              @if (signInManager.IsSignedIn(User))
-        {
-            <li class="nav-item">
-                <form method="post" asp-controller="account" asp-action="logout">
-                    <button type="submit" style="width:auto"
-                            class="nav-link btn btn-link py-0">
-                        Logout @User.Identity.Name
-                    </button>
-                </form>
-            </li>
-        }
-        else
-        {
-            <li class="nav-item">
-                <a class="nav-link" asp-controller="account" asp-action="register">
-                    Register
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" asp-controller="account" asp-action="login">
-                    Login
-                </a>
-            </li>
-        }
-                </ul>
+            </div>
+
+            <ul class="navbar-nav ml-auto">
+
+                @if (signInManager.IsSignedIn(User))
+                {
+                    <li class="nav-item">
+                        <form method="post" asp-controller="account" asp-action="logout">
+                            <button type="submit" style="width:auto"
+                                class="nav-link btn btn-link py-0">
+                                Logout @User.Identity.Name
+                            </button>
+                        </form>
+                    </li>
+
+
+                }
+                else
+                {
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="account" asp-action="register">
+                            Register
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="account" asp-action="login">
+                            Login
+                        </a>
+                    </li>
+                }
+            </ul>
+
+
         </nav>
 
         <div>
@@ -82,9 +95,9 @@
 
 
     <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-2.2.0.min.js"></script>
-<script src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.16.0/jquery.validate.min.js"></script>
-<script src="https://ajax.aspnetcdn.com/ajax/jquery.validation.unobtrusive/3.2.6/jquery.validate.unobtrusive.min.js"></script>
- 
+    <script src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.16.0/jquery.validate.min.js"></script>
+    <script src="https://ajax.aspnetcdn.com/ajax/jquery.validation.unobtrusive/3.2.6/jquery.validate.unobtrusive.min.js"></script>
+
 
 
     @await RenderSectionAsync("Scripts", required: false)

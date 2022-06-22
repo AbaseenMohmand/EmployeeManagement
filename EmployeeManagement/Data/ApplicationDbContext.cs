@@ -15,7 +15,14 @@ namespace EmployeeManagement.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-           // modelBuilder.Seed();
+            // modelBuilder.Seed();
+
+            foreach (var foreignKey in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
+            {
+                foreignKey.DeleteBehavior = DeleteBehavior.Restrict;
+            }
+
+
         }
 
         public DbSet<Employee> Employees { get; set; }
