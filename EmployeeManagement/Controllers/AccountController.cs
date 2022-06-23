@@ -1,4 +1,5 @@
 ﻿using EmployeeManagement.Models;
+using EmployeeManagement.Repository.IRepository;
 using EmployeeManagement.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -7,28 +8,36 @@ using System.Security.Claims;
 
 namespace EmployeeManagement.Controllers
 {
-    
+
     public class AccountController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private ILogger<AccountController> _logger;
-        public AccountController(UserManager<ApplicationUser> userManager, 
+        private string generatedToken = null;
+        private readonly ITokenService _tokenService;
+        private readonly IConfiguration _config;
+        public AccountController(UserManager<ApplicationUser> userManager,
                                  SignInManager<ApplicationUser> signInManager,
-                                 ILogger<AccountController> logger)
+                                 ILogger<AccountController> logger,
+                                 IConfiguration config,
+                                 ITokenService tokenService
+                                 )
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
+            _config = config;
+            _tokenService = tokenService;
         }
 
-        [AcceptVerbs("Get","Post")]
+        [AcceptVerbs("Get", "Post")]
         [AllowAnonymous]
         public async Task<IActionResult> IsEmailInUse(string email)
         {
             if (ModelState.IsValid)
             {
-                var user = await _userManager.FindByNameAsync(email);               
+                var user = await _userManager.FindByNameAsync(email);
                 if (user == null)
                 {
                     return Json(true);
@@ -132,38 +141,49 @@ namespace EmployeeManagement.Controllers
 
         [HttpPost]
         [AllowAnonymous]
-        public async Task<IActionResult> Login(LoginViewModel model ,string returnUrl)
+        public async Task<IActionResult> Login(LoginViewModel model, string returnUrl)
         {
             ModelState.Remove("returnUrl");
-            model.ExternalLogins =(await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+            model.ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
-            
+
             if (ModelState.IsValid)
             {
 
                 var user = await _userManager.FindByEmailAsync(model.Email);
 
-                if (user != null && !user.EmailConfirmed &&
-                            (await _userManager.CheckPasswordAsync(user, model.Password)))
-                {
-                    ModelState.AddModelError(string.Empty, "Email not confirmed yet");
-                    return View(model);
-                }
+                //if (user != null && !user.EmailConfirmed &&
+                //            (await _userManager.CheckPasswordAsync(user, model.Password)))
+                //{
+                //    ModelState.AddModelError(string.Empty, "Email not confirmed yet");
+                //    return View(model);
+                //}
 
 
                 var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, false);
                 if (result.Succeeded)
                 {
-                    if (!string.IsNullOrEmpty(returnUrl)&& Url.IsLocalUrl(returnUrl) )
-                    {
-                        return LocalRedirect(returnUrl);
-                    }
-                    else
-                    {
-                        return RedirectToAction("Index", "Home");
-                    }
 
-                    
+                    generatedToken = _tokenService.BuildToken(_config["Jwt:Key"].ToString(), _config["Jwt:Issuer"].ToString(), user);
+                    if (generatedToken != null)
+                    {
+                        HttpContext.Session.SetString("Token", generatedToken);
+
+                        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                        {
+                            return LocalRedirect(returnUrl);
+                        }
+                        else
+                        {
+                            return RedirectToAction("Index", "Home");
+                        }
+
+                    }
+                    ModelState.AddModelError(string.Empty, "Session Expire");
+
+
+
+
                 }
 
                 ModelState.AddModelError(string.Empty, "Invalid Attempt");
@@ -231,18 +251,18 @@ namespace EmployeeManagement.Controllers
             var email = info.Principal.FindFirstValue(ClaimTypes.Email);
             ApplicationUser user = null;
 
-            if (email != null)
-            {
-                // Find the user
-                user = await _userManager.FindByEmailAsync(email);
+            //if (email != null)
+            //{
+            //    // Find the user
+            //    user = await _userManager.FindByEmailAsync(email);
 
-                // If email is not confirmed, display login view with validation error
-                if (user != null && !user.EmailConfirmed)
-                {
-                    ModelState.AddModelError(string.Empty, "Email not confirmed yet");
-                    return View("Login", loginViewModel);
-                }
-            }
+            //    // If email is not confirmed, display login view with validation error
+            //    if (user != null && !user.EmailConfirmed)
+            //    {
+            //        ModelState.AddModelError(string.Empty, "Email not confirmed yet");
+            //        return View("Login", loginViewModel);
+            //    }
+            //}
 
             if (signInResult.Succeeded)
             {
@@ -252,12 +272,12 @@ namespace EmployeeManagement.Controllers
             // a local account
             else
             {
-               
+
 
                 if (email != null)
                 {
                     // Create a new user without password if we do not have a user already
-                    
+
 
                     if (user == null)
                     {
@@ -301,7 +321,7 @@ namespace EmployeeManagement.Controllers
                 // Find the user by email
                 var user = await _userManager.FindByEmailAsync(model.Email);
                 // If the user is found AND Email is confirmed
-                if (user != null && await _userManager.IsEmailConfirmedAsync(user))
+                if (user != null /*&& await _userManager.IsEmailConfirmedAsync(user)*/)
                 {
                     // Generate the reset password token
                     var token = await _userManager.GeneratePasswordResetTokenAsync(user);
@@ -373,4 +393,4 @@ namespace EmployeeManagement.Controllers
         }
 
     }
-    }
+}
