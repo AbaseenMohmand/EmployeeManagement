@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace EmployeeManagement.Controllers
 {
     [AllowAnonymous]
+    
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;

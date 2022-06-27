@@ -127,6 +127,7 @@ namespace EmployeeManagement.Controllers
             return View("Error");
         }
 
+        [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> Login(string returnUrl)
         {
@@ -139,7 +140,7 @@ namespace EmployeeManagement.Controllers
             return View(model);
         }
 
-        [HttpPost]
+        [HttpPost("/api/Account/Login")]
         [AllowAnonymous]
         public async Task<IActionResult> Login(LoginViewModel model, string returnUrl)
         {
@@ -180,10 +181,47 @@ namespace EmployeeManagement.Controllers
 
                     }
                     ModelState.AddModelError(string.Empty, "Session Expire");
+                }
+
+                ModelState.AddModelError(string.Empty, "Invalid Attempt");
 
 
+            }
+            return View(model);
+        }
 
+        /// //////////////////////////////////////////////////////////
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> Login(LoginViewModel model)
+        {
+            //ModelState.Remove("returnUrl");
+            model.ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
+            if (ModelState.IsValid)
+            {
+
+                var user = await _userManager.FindByEmailAsync(model.Email);
+
+                //if (user != null && !user.EmailConfirmed &&
+                //            (await _userManager.CheckPasswordAsync(user, model.Password)))
+                //{
+                //    ModelState.AddModelError(string.Empty, "Email not confirmed yet");
+                //    return View(model);
+                //}
+                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, false);
+                if (result.Succeeded)
+                {
+
+                    //generatedToken = _tokenService.BuildToken(_config["Jwt:Key"].ToString(), _config["Jwt:Issuer"].ToString(), user);
+                    //if (generatedToken != null)
+                    //{
+                    //    HttpContext.Session.SetString("Token", generatedToken);
+
+                            return RedirectToAction("Index", "Home");
+
+                    
+                    //ModelState.AddModelError(string.Empty, "Session Expire");
                 }
 
                 ModelState.AddModelError(string.Empty, "Invalid Attempt");
